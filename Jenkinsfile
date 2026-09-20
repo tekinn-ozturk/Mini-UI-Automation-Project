@@ -16,15 +16,10 @@ pipeline {
 
         always {
 
-            publishHTML([
-                allowMissing: false,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'target/reports',
-                reportFiles: 'cucumber-report.html',
-                reportName: 'Cucumber Report'
-            ])
+            cucumber buildStatus: 'UNSTABLE',
+                     fileIncludePattern: '**/cucumber.json'
 
         }
+
     }
 }
