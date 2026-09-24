@@ -20,6 +20,7 @@ public class ExampleSteps {
         driver = new ChromeDriver();
 
         driver.get("https://www.google.com");
+        driver.quit();
     }
 
     @When("Arama kutusuna tıkla.")
