@@ -25,15 +25,6 @@ pipeline {
                 fileIncludePattern: 'target/reports/cucumber.json'
             )
 
-            publishHTML([
-                allowMissing: false,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'target/reports',
-                reportFiles: 'cucumber-report.html',
-                reportName: 'Cucumber HTML Report'
-            ])
-
         }
 
     }
