@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    INFRA_MAVEN_REPO_UNREACHABLE: every download goes through a corporate Nexus mirror whose
+    hostname does not resolve from the agent (.invalid is a reserved TLD, it never resolves).
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+    <mirrors>
+        <mirror>
+            <id>corp-nexus</id>
+            <name>Corporate Nexus</name>
+            <url>https://nexus.corp-internal.invalid/repository/maven-public/</url>
+            <mirrorOf>*</mirrorOf>
+        </mirror>
+    </mirrors>
+</settings>
