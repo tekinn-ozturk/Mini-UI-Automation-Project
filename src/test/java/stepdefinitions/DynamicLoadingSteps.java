@@ -21,7 +21,7 @@ public class DynamicLoadingSteps {
 
     @Given("dinamik yükleme sayfası {int} açılır")
     public void openDynamicLoadingExample(int example) {
-        DriverManager.get().get(TestConfig.baseUrl() + "/dynamic_loading/" + example);
+        DriverManager.open(TestConfig.baseUrl() + "/dynamic_loading/" + example);
     }
 
     @When("start butonuna tıklanır")

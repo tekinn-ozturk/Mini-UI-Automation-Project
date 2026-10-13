@@ -12,6 +12,7 @@ def mavenArgsFor(String scenario) {
         case 'CUKE_UNDEFINED_STEP':
         case 'MVN_FORKED_VM_CRASH':
         case 'JAVA_NULL_POINTER':
+        case 'MULTI_FAILURE_SET':   // 15 scenarios in one build: 5 pass, 10 fail in 7 groups
             return "\"-Dcucumber.filter.tags=@${scenario}\""
         case 'CUKE_AMBIGUOUS_STEP':
             return '"-Dcucumber.glue=stepdefinitions,extraglue.ambiguous"'
@@ -41,8 +42,9 @@ pipeline {
     agent any
 
     parameters {
-        choice(name: 'SCENARIO', description: 'Failure scenario to reproduce (NONE = green build)', choices: [
+        choice(name: 'SCENARIO', description: 'Failure scenario to reproduce (NONE = green build, MULTI_FAILURE_SET = 15 scenarios, 10 failures)', choices: [
                 'NONE',
+                'MULTI_FAILURE_SET',
                 'SEL_NO_SUCH_ELEMENT',
                 'SEL_TIMEOUT',
                 'SEL_STALE_ELEMENT',

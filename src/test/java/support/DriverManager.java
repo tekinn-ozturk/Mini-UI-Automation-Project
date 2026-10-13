@@ -1,6 +1,7 @@
 package support;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -27,6 +28,25 @@ public final class DriverManager {
         WebDriverManager.chromedriver().setup();
         driver = new ChromeDriver(options);
         return driver;
+    }
+
+    /**
+     * Opens a page. The practice site sometimes answers a request with 503 after 30 s (Heroku request
+     * timeout). When that hits the page itself or jQuery (the dynamic loading pages need it), the page is
+     * loaded again, at most 5 times. Failed styles or analytics scripts do not matter to the tests.
+     */
+    public static void open(String url) {
+        for (int attempt = 1; attempt <= 5; attempt++) {
+            get().get(url);
+            Object failedRequests = ((JavascriptExecutor) driver).executeScript(
+                    "return performance.getEntries()"
+                            + ".filter(e => e.responseStatus >= 500 && (e.entryType === 'navigation' || e.name.includes('/jquery-1')))"
+                            + ".map(e => e.name).join(', ')");
+            if (String.valueOf(failedRequests).isEmpty()) {
+                return;
+            }
+            System.out.println("[DriverManager] server error for " + failedRequests + ", reloading " + url);
+        }
     }
 
     public static ChromeOptions defaultOptions() {

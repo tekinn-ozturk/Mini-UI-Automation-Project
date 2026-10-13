@@ -39,11 +39,38 @@ bugünkü `ErrorClassifier` anahtar kelime kurallarının yerel Maven loguna uyg
 | 19 | `JENKINS_CREDENTIALS_NOT_FOUND` | JENKINS | (Jenkins'te ölçülecek) | `Could not find credentials entry with ID 'qa-env-admin-credentials'` — Maven hiç çalışmaz | `Jenkinsfile:87` | Credential'ı Jenkins'e ekle / ID'yi düzelt |
 | 20 | `JENKINS_PIPELINE_SCRIPT_ERROR` | JENKINS | (Jenkins'te ölçülecek) | `groovy.lang.MissingPropertyException: No such property: REPORT_FOLDER` — tanımsız değişken | `Jenkinsfile:77` | `REPORT_FOLDER`'ı `environment {}` / parametre olarak tanımla |
 
+## Çoklu hata seti (`MULTI_FAILURE_SET`)
+
+Tek build'de 15 senaryo (`features/multi/MultiFailureSet.feature`): **5'i geçer, 10'u 7 farklı nedenle düşer**.
+build-analyzer'ın çoklu hata akışını sınar: başarısız testleri bulma, hata imzasıyla gruplama, grup başına AI analizi.
+
+Beklenen test özeti: `Tests run: 15, Failures: 1, Errors: 9` → **15 toplam · 5 başarılı · 10 başarısız · 0 atlanan**.
+
+Geçen senaryolar: geçerli kullanıcı ile giriş, yanlış şifre reddi, config'teki kullanıcı ile giriş, dinamik yükleme
+örnek 1 ve 2 (15 sn bekleme).
+
+| Grup | Test | Exception | Konum | Beklenen kök neden |
+|---|---|---|---|---|
+| G1 | 3 | `NoSuchElementException` — link text `Forgot your password?` | `LoginPage.java:50` | Link login sayfasında yok (`/forgot_password` ayrı sayfa); 3 senaryo aynı nedenle düşer |
+| G2 | 2 | `TimeoutException` — `#finish h4` (2 sn) | `DynamicLoadingSteps.java:35` | Bekleme 2 sn, içerik ~5 sn'de geliyor (örnek 1 ve 2) |
+| G3 | 1 | `StaleElementReferenceException` | `LoginPage.java:28` | `LoginPage` elementleri constructor'da cache'liyor, sayfa yenilenince referans bayat |
+| G4 | 1 | `NullPointerException` — `"username" is null` | `LoginSteps.java:42` | `users.admin.*` config'de yok |
+| G5 | 1 | `ComparisonFailure` — `Secure Area[ Dashboard]` | `LoginSteps.java:63` | Feature'daki beklenen başlık yanlış |
+| G6 | 1 | `NoSuchElementException` — css `#start button` | `DynamicLoadingSteps.java:29` | `/dynamic_loading/3` sayfası yok (404). G1 ile aynı tip, başka yer → ayrı grup |
+| G7 | 1 | `UndefinedStepException` — `çıkış butonuna tıklanır` | `MultiFailureSet.feature:91` | Step tanımı hiç yazılmamış |
+
+Gruplar büyükten küçüğe, eşitse logdaki sıraya göre numaralanır. Grup sayısı (7) build-analyzer'ın çağrı başına grup
+sınırını (6) aştığı için analiz **2 LLM çağrısı** ile yapılır (G1–G6, G7); yine tek analiz, tek DB satırıdır.
+
+Not: G7'de Cucumber step'in altına exception basmaz; hatayı yalnızca Surefire raporu gösterir. build-analyzer bu testi
+bugün Surefire adıyla (`Regresyon - login ve dinamik içerik.Çıkış yaptıktan sonra ...`), step ve feature satırı
+olmadan listeler.
+
 ## Senaryolar nasıl tetikleniyor
 
 | Mekanizma | Senaryolar |
 |---|---|
-| Cucumber tag'i (`-Dcucumber.filter.tags=@<SCENARIO>`) | 1–6, 12, 13, 14 |
+| Cucumber tag'i (`-Dcucumber.filter.tags=@<SCENARIO>`) | 1–6, 12, 13, 14, `MULTI_FAILURE_SET` |
 | Ek glue paketi (`-Dcucumber.glue=...`) | 7 |
 | Ayrı feature klasörü (`src/test/resources/broken-features`) | 8 |
 | Ortam seçimi (`-Denv=preprod` / `-Denv=staging`) | 9, 16 |
@@ -63,3 +90,6 @@ mvn -B clean test "-Dcucumber.filter.tags=@SEL_TIMEOUT"
 - 18. senaryo agent'ta `allure` komutu **yoksa** fail eder; kuruluysa geçer.
 - 19. senaryoda Credentials Binding plugin'i kurulu değilse hata `No such DSL method 'withCredentials'` olur (yine JENKINS kategorisi).
 - Tarayıcı varsayılan olarak headless çalışır; yerelde izlemek için `-Dheadless=false`.
+- the-internet.herokuapp.com bazı isteklere 30 sn sonra `503` döner (Heroku zaman aşımı). Sayfanın kendisi veya
+  jQuery bu yüzden gelmezse `DriverManager.open` sayfayı en fazla 5 kez yeniden yükler ve logda
+  `[DriverManager] server error for ...` yazar. Form gönderiminde (giriş butonu) yeniden deneme yoktur; site o an çok yavaşsa geçmesi gereken bir senaryo da düşebilir.

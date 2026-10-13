@@ -16,7 +16,7 @@ public class LoginSteps {
 
     @Given("login sayfası açılır")
     public void openLoginPage() {
-        DriverManager.get().get(TestConfig.baseUrl() + "/login");
+        DriverManager.open(TestConfig.baseUrl() + "/login");
         loginPage = new LoginPage(DriverManager.get());
     }
 
